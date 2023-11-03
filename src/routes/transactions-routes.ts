@@ -2,36 +2,55 @@ import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { knex } from '../database'
 import { randomUUID } from 'crypto'
+import { checkSessionIdExists } from '../middlewares/check-session-id-exists'
 
 export function transactionsRoutes(app: FastifyInstance) {
-  app.get('/', async (req, res) => {
-    const transactions = await knex('transactions').select('*')
+  // global middleware, but exists only in this plugin context
+  app.addHook('preHandler', async (req, res) => {
+    console.log(`${req.method} ${req.url}`)
+  })
+
+  app.get('/', { preHandler: [checkSessionIdExists] }, async (req, res) => {
+    const { sessionId } = req.cookies
+
+    const transactions = await knex('transactions')
+      .where('session_id', sessionId)
+      .select('*')
 
     return res.send({ transactions })
   })
 
-  app.get('/:id', async (req, res) => {
+  app.get('/:id', { preHandler: [checkSessionIdExists] }, async (req, res) => {
     const paramsSchema = z.object({
       id: z.string().uuid(),
     })
 
     const { id } = paramsSchema.parse(req.params)
 
+    const { sessionId } = req.cookies
+
     const transaction = await knex('transactions')
       .select('*')
       .where('id', id)
+      .andWhere('session_id', sessionId)
       .first()
 
     return res.send(transaction)
   })
 
-  app.get('/summary', async (req, res) => {
-    const summary = await knex('transactions')
-      .sum('amount', { as: 'amount' })
-      .first()
+  app.get(
+    '/summary',
+    { preHandler: [checkSessionIdExists] },
+    async (req, res) => {
+      const { sessionId } = req.cookies
+      const summary = await knex('transactions')
+        .where('session_id', sessionId)
+        .sum('amount', { as: 'amount' })
+        .first()
 
-    return res.send(summary)
-  })
+      return res.send(summary)
+    },
+  )
 
   app.post('/', async (req, res) => {
     const bodySchema = z.object({

@@ -9,6 +9,8 @@
 - SQLite
 - Dotenv
 - Zod
+- Vitest
+- Supertest
 
 ### DB
 
