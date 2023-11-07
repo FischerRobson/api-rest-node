@@ -4,7 +4,7 @@ import { knex } from '../database'
 import { randomUUID } from 'crypto'
 import { checkSessionIdExists } from '../middlewares/check-session-id-exists'
 
-export function transactionsRoutes(app: FastifyInstance) {
+export async function transactionsRoutes(app: FastifyInstance) {
   // global middleware, but exists only in this plugin context
   app.addHook('preHandler', async (req, res) => {
     console.log(`${req.method} ${req.url}`)
@@ -35,7 +35,7 @@ export function transactionsRoutes(app: FastifyInstance) {
       .andWhere('session_id', sessionId)
       .first()
 
-    return res.send(transaction)
+    return res.send({ transaction })
   })
 
   app.get(
@@ -48,7 +48,7 @@ export function transactionsRoutes(app: FastifyInstance) {
         .sum('amount', { as: 'amount' })
         .first()
 
-      return res.send(summary)
+      return res.send({ summary })
     },
   )
 
