@@ -92,7 +92,7 @@ describe('Transactions routes', () => {
 
     const cookies = createTransactionResponse.get('Set-Cookie')
 
-    const createDebitTransactionResponse = await supertest(app.server)
+    await supertest(app.server)
       .post('/transactions')
       .set('Cookie', cookies)
       .send({
